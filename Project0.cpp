@@ -21,6 +21,7 @@ double a;
 double b;
 double c;
 double d;
+int q = 1;
 
 
 // creates solution class
@@ -28,7 +29,6 @@ class soln
 {
 public:
 	vector <double> coeff;
-	double x_val;
 	double fitness;
 	double test(double, double);
 	double calc_fit(double);
@@ -36,7 +36,14 @@ public:
 	double ans_f_target;
 	double diff;
 	double get_fitness();
+	double coefficients();
+	double get_x_val(double);
+	double x_val;
 };
+
+
+
+
 
 //calculates the number of coeffs based on the number of primitaive functions
 int num_coeff()
@@ -79,7 +86,7 @@ double f_target(double x)
 //calculates the difference between the approximate function and target function
 double soln::test(double ans_f_approx, double ans_f_target)
 {
-	diff = ans_f_approx - ans_f_target;
+	diff = fabs(ans_f_approx - ans_f_target);
 return diff;
 }
 
@@ -90,15 +97,18 @@ double soln::calc_fit(double diff)
 return fitness;
 }
 
-double soln::get_fitness()
+double soln::coefficients()
 {
 	for (int i = 0; i < number_coeff; i++)
 	{
 		double co = ((double)rand() / RAND_MAX) * 0.001;		//creates random coeff between 0 and 0.001
 		coeff.push_back(co);
+
+	}
+	for (int i = 0; i < coeff.size(); i++)
+	{
 		cout << coeff.at(i) << "\t";
 	}
-	
 	cout << "\n";
 	//cout << coeff.empty() << endl;
 	//cout << coeff.size() << endl;
@@ -107,21 +117,32 @@ double soln::get_fitness()
 	c = coeff.at(2);
 	d = coeff.at(3);
 	//cout << "check1" << endl;
+	return number_coeff;
+}
+
+double soln::get_x_val(double x_value)
+{
 	for (int i = 0; i < 1; i++)
 	{
-		x_val = ((double)rand() / RAND_MAX) * (2 * PI);			//creates random x value between 0 and 2pi
-		cout << x_val << "\t" << endl;
+		x_val = x_value;			//creates random x value between 0 and 2pi
+		//cout << x_val << "\t" << endl;
 	}
+	return x_val;
+}
+
+
+double soln::get_fitness()
+{
 	ans_f_approx = f_approx(f_1(a, b, x_val), f_2(c, d, x_val));
 	ans_f_target = f_target(x_val);
-	cout << "Begin function calculations";
+	cout << "Begin function calculations" << endl;
 	cout << f_1(a, b, x_val) << endl;							//writes function 1 value
 	cout << f_2(c, d, x_val) << endl;							//writes function 2 value
 	cout << ans_f_approx << endl;								//writes approximate function value
 	cout << ans_f_target << endl;								//writes target function value
 	cout << test(ans_f_approx, ans_f_target) << endl;			//writes difference betweeen the approximate function and target function values
 	cout << calc_fit(diff) << endl;								//writes the fitness
-	cout << "\n";
+	//cout << "\n";
 	
 	return fitness;
 }
@@ -130,11 +151,30 @@ double soln::get_fitness()
 int main()
 {
 	soln S;
+	soln S2;
 	srand(time(NULL));
 	number_coeff = num_coeff();
 	cout << "The number of coefficients is ";
 	cout << number_coeff << endl;								//displays number of coeff based on number of prim functions
-	cout << S.get_fitness() << endl;							//displays fitness
+	
+	for (int i = 0; i < q; i++)
+	{
+		double xvalue = ((double)rand() / RAND_MAX) * (2 * PI);
+		cout << S.coefficients() << endl;
+		cout << S.get_x_val(xvalue) << endl;
+		S.get_fitness();							//displays fitness
+		cout << "\n" << endl;
+		cout << "next set" << endl;
+		//cout << S.coeff.size() << endl;
+		cout << S2.coefficients() << endl;
+		cout << S2.get_x_val(xvalue) << endl;
+		S2.get_fitness();						//displays fitness
+		//cout << S2.coeff.size() << endl;
+	}
+	
+
+
+
 
    return 0;
 }
