@@ -22,6 +22,8 @@ double b;
 double c;
 double d;
 int q = 1;
+class soln;
+double replicate(soln& S, soln& S2);
 
 
 // creates solution class
@@ -39,10 +41,9 @@ public:
 	double coefficients();
 	double get_x_val(double);
 	double x_val;
+	double mutation();
+	double co;
 };
-
-
-
 
 
 //calculates the number of coeffs based on the number of primitaive functions
@@ -101,9 +102,8 @@ double soln::coefficients()
 {
 	for (int i = 0; i < number_coeff; i++)
 	{
-		double co = ((double)rand() / RAND_MAX) * 0.001;		//creates random coeff between 0 and 0.001
+		co = ((double)rand() / RAND_MAX) * 0.001;		//creates random coeff between 0 and 0.001
 		coeff.push_back(co);
-
 	}
 	for (int i = 0; i < coeff.size(); i++)
 	{
@@ -117,7 +117,7 @@ double soln::coefficients()
 	c = coeff.at(2);
 	d = coeff.at(3);
 	//cout << "check1" << endl;
-	return number_coeff;
+	return 1;
 }
 
 double soln::get_x_val(double x_value)
@@ -129,7 +129,6 @@ double soln::get_x_val(double x_value)
 	}
 	return x_val;
 }
-
 
 double soln::get_fitness()
 {
@@ -148,6 +147,42 @@ double soln::get_fitness()
 }
 
 
+double replicate(soln& S, soln& S2)
+{
+	cout << "replicate in" << endl;
+	if (S.fitness < S2.fitness)
+	{
+		S = S2;
+		cout << "case 1" << endl;
+	}
+	else
+	{
+		S2 = S;
+		cout << "case 2" << endl;
+	}
+	cout << S.fitness << endl;
+	cout << S2.fitness << endl;
+	cout << "replicate out" << endl;
+	return 1;
+}
+
+double soln::mutation()
+{
+	cout << "mutation in" << endl;
+	cout << coeff.size() << endl;
+	for (int i = 0; i < number_coeff; i++)
+	{
+		//coeff.erase(coeff.begin()+3);
+		coeff.at(i) = coeff.at(i) + ((((double)rand() / RAND_MAX) * 0.001) - (((double)rand() / RAND_MAX) * 0.001));		//creates random coeff between 0 and 0.001
+	}
+	cout << coeff.size() << endl;
+	cout << "mutation out" << endl;
+	return 1;
+}
+
+
+
+
 int main()
 {
 	soln S;
@@ -157,8 +192,6 @@ int main()
 	cout << "The number of coefficients is ";
 	cout << number_coeff << endl;								//displays number of coeff based on number of prim functions
 	
-	for (int i = 0; i < q; i++)
-	{
 		double xvalue = ((double)rand() / RAND_MAX) * (2 * PI);
 		cout << S.coefficients() << endl;
 		cout << S.get_x_val(xvalue) << endl;
@@ -170,11 +203,28 @@ int main()
 		cout << S2.get_x_val(xvalue) << endl;
 		S2.get_fitness();						//displays fitness
 		//cout << S2.coeff.size() << endl;
-	}
-	
+		cout << "\n" << endl;
+		cout << S.fitness << endl;
+		cout << S2.fitness << endl;
+		//Determines which solution stays and replicates
+		cout << replicate(S, S2) << endl;
 
-
-
+		for (int i = 0; i < 1; i++)
+		{
+			cout << S2.mutation() << endl;
+			cout << "\n" << endl;
+			cout << "next set" << endl;
+			cout << S2.coeff.size() << endl;
+			cout << S2.coefficients() << endl;
+			cout << S2.get_x_val(xvalue) << endl;
+			S2.get_fitness();						//displays fitness
+													//cout << S2.coeff.size() << endl;
+			cout << "\n" << endl;
+			cout << S.fitness << endl;
+			cout << S2.fitness << endl;
+			//Determines which solution stays and replicates
+			cout << replicate(S, S2) << endl;
+		}
 
    return 0;
 }
