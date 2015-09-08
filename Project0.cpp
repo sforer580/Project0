@@ -6,6 +6,7 @@
 #include <vector>
 #include <math.h>
 #include <time.h>
+#include <stdio.h>
 using namespace std;
 
 
@@ -13,7 +14,8 @@ using namespace std;
 int num_coeff(int num_func);
 int number_coeff;
 double PI = 3.1415926535897;
-int n = 10;
+int n = 100;
+int samples = 5;
 double f_1(double a, double b, double x);
 double f_2(double c, double d, double x);
 double f_approx(double e, double f, double x);
@@ -35,7 +37,11 @@ public:
 	double b;
 	double c;
 	double d;
-	double get_x_val(double);
+	double create_x_value(int);
+	double set_x_value(double q);
+	void interp_x_value(int index);
+	//double get_x_val(double);
+	double x_value;
 	double x_val;
 	double ans_f_approx;
 	double ans_f_target;
@@ -44,6 +50,7 @@ public:
 	double calc_fit(double);
 	double get_fitness();
 	double fitness;
+	void reset_fitness();
 	double mutation();
 };
 
@@ -64,7 +71,7 @@ double soln::coefficients()
 {
 	for (int i = 0; i < number_coeff; i++)
 	{
-		co = ((double)rand() / RAND_MAX) * 0.001;
+		co = ((double)rand() / RAND_MAX) * 0.001+1;
 		coeff.push_back(co);
 	}
 	return 1;
@@ -98,17 +105,53 @@ double soln::assign_coeff()
 }
 
 
-//Assings the x value to a variable so that both instances of soln class will be evaluated at the same point
-double soln::get_x_val(double x_value)
+//Creates x value between 0 and 2pi
+double soln::create_x_value(int i)
 {
-	for (int i = 0; i < 1; i++)
+	double X = -1.0;
+	static int first = 0;
+	vector<double> Xstart;
+	if (first == 0)
 	{
-		x_val = x_value;
-		//cout << x_val << "\t" << endl;
+		for (int z = 0; z < samples; z++)
+		{
+			Xstart.push_back(((double)rand() / RAND_MAX)*(2*PI));
+		}
+		first = 1;
 	}
-	return x_val;
+	const static vector<double> x_value = Xstart;
+	return x_value.at(i);
 }
 
+
+
+//Sets the x value 
+//double soln::set_x_value(double q)
+//{
+//	x_value = q;
+//	return 1;
+//}
+
+
+//interp x values
+void soln::interp_x_value(int index)
+{
+	//take in an index
+	//interp x value at that index
+	x_val = create_x_value(index);
+	cout << x_val << endl;
+}
+
+//Assings the x value to a variable so that both instances of soln class will be evaluated at the same point
+//double soln::get_x_val(double x_value)
+//{
+//	for (int i = 0; i < 1; i++)
+//	{
+//		x_val = x_value;
+//	//cout << x_val << "\t" << endl;
+//	}
+//	return x_val;
+//}
 
 //Function 1
 double f_1(double a, double b, double x)
@@ -153,7 +196,7 @@ return diff;
 //Calculates the fitness function
 double soln::calc_fit(double diff)
 {
-	fitness = -diff;
+	fitness = fitness - diff;
 return fitness;
 }
 
@@ -176,8 +219,14 @@ double soln::get_fitness()
 	cout << "The fitness is " << endl;
 	cout << calc_fit(diff) << endl;								//writes the fitness
 	//cout << "\n";
-	
 	return 1;
+}
+
+
+//Resets the fitness values for both instacne of the soln class
+void soln::reset_fitness()
+{
+	fitness = 0;
 }
 
 
@@ -209,8 +258,9 @@ double soln::mutation()
 	//cout << coeff.size() << endl;
 	for (int i = 0; i < number_coeff; i++)
 	{
+		double range = 0.1;
 		//coeff.erase(coeff.begin()+3);
-		coeff.at(i) = coeff.at(i) + ((((double)rand() / RAND_MAX) * 0.001) - (((double)rand() / RAND_MAX) * 0.001));		//creates random coeff between 0 and 0.001
+		coeff.at(i) = coeff.at(i) + ((((double)rand() / RAND_MAX) * range) - (((double)rand() / RAND_MAX) * range));		//creates random coeff between 0 and 0.001
 	}
 	for (int i = 0; i < coeff.size(); i++)
 	{
@@ -233,32 +283,45 @@ int main()
 	cout << number_coeff << endl;									//displays number of coeff based on number of prim functions
 	S.coefficients();												//Creates random coefficients the first instance of soln class
 	S2.coefficients();												//Creates random coefficients the second instance of soln class
+	FILE * pfile;
+	errno_t err;
+	err = fopen_s(&pfile, "test.txt", "w");
 	for (int i = 0; i < n; i++)
 	{
-		double xvalue = ((double)rand() / RAND_MAX) * (2 * PI);		//Creates random x value between 0 and 2pi
 		cout << "First instance coefficients" << endl;
 		S.check_coeff();											//Displays coefficients the first instance of soln class
 		cout << "Second instance coefficients" << endl;
 		S2.check_coeff();											//Displys coefficients the second instance of soln class
 		S.assign_coeff();											//Assigns coefficients to their respective index in the first instance of soln class
 		S2.assign_coeff();											//Assigns coefficients to their respective index in the second instance of soln class
-		cout << "First instance of soln class" << endl;
-		cout << "The x value is " << endl;
-		cout << S.get_x_val(xvalue) << endl;						//Gets the x value and assigns it to the first instance of soln class
-		S.get_fitness();											//Calculates and displays fitness for the first instance of soln class
-		cout << "\n" << endl;
-		cout << "Second instance of soln class" << endl;
-		cout << "The x value is " << endl;
-		cout << S2.get_x_val(xvalue) << endl;						//Gets the x value and assigns it to the second instance of soln class
-		S2.get_fitness();											//Calculates and displays fitness for the second instance of soln class
-		cout << "\n" << endl;
+		S.reset_fitness();
+		S2.reset_fitness();
+		for (int i = 0; i < samples; i++)
+		{
+			S.create_x_value(i);
+			cout << "First instance of soln class" << endl;
+			cout << "The x value is " << endl;
+			S.interp_x_value(i);					//Gets the x value and assigns it to the first instance of soln class
+			S.get_fitness();										//Calculates and displays fitness for the first instance of soln class
+			cout << "\n" << endl;
+			cout << "Second instance of soln class" << endl;
+			cout << "The x value is " << endl;
+			S2.interp_x_value(i);					//Gets the x value and assigns it to the second instance of soln class
+			S2.get_fitness();										//Calculates and displays fitness for the second instance of soln class
+			cout << "\n" << endl;
+		}
+		fprintf(pfile, "%.5f\t%.5f\n", S.fitness, S2.fitness);
 		replicate(S, S2);											//Determines which solution stays and replicates
 		cout << "\n" << endl;
 		S2.mutation();												//Mutates the losing instance of the soln class
 		cout << "\n" << endl;
 		cout << "next set" << endl;
+		
 	}
 	cout << "Solution coefficients" << endl;
 	S.check_coeff();												//Displays the solution coefficients
-   return 0;
+	fclose(pfile);
+	return 0;
 }
+
+//two fucntions for putting the target fuction to a text file
