@@ -7,10 +7,11 @@
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
+#include <algorithm>
 using namespace std;
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Intialize functions and global variables
 int num_coeff(int num_func);
 int number_coeff;
@@ -25,9 +26,11 @@ class soln;
 double replicate(soln& S, soln& S2);
 void generation(vector <soln>* pPop);
 int binary_select(vector<soln>* pPop);
+void display_x_values(FILE*pFile2);
+class scoreboard;
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Creates solution class
 class soln
 {
@@ -55,12 +58,24 @@ public:
 	void reset_fitness();
 	double mutation();
 	int age;
-	void plot_to_file(FILE* pFile);
+	vector<double> get_final_coefficients();
+	void plot_to_file3(FILE* pFile3);
 };
 
 
-//-------------------------------------------------------------------------------------------------------
-//Calculates the number of coeffs based on the number of primitive functions
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//creates the scoreboard class
+class scoreboard
+{
+public:
+	void reorder_solutions(vector<soln>* pPop);
+	//void obtain_solns(vector<soln>* pPop);
+	//void sort(less_than_fitness());
+};
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Calculates the number of coefficients based on the number of primitive functions
 int num_coeff()
 {
 	int num_func;
@@ -71,7 +86,7 @@ int num_coeff()
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Creates random coefficients between 0 and 0.001
 void soln::coefficients()
 {
@@ -84,7 +99,7 @@ void soln::coefficients()
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Displays coefficients
 double soln::check_coeff()
 {
@@ -97,7 +112,7 @@ double soln::check_coeff()
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Assigns coefficients to their respective index
 double soln::assign_coeff()
 {
@@ -110,8 +125,8 @@ double soln::assign_coeff()
 }
 
 
-//-------------------------------------------------------------------------------------------------------
-//Creates x value between 0 and 2pi
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Creates static x value between 0 and 2pi
 double soln::create_x_value(int i)
 {
 	static int first = 0;
@@ -129,7 +144,7 @@ double soln::create_x_value(int i)
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //interp x values
 void soln::interp_x_value(int index)
 {
@@ -138,16 +153,16 @@ void soln::interp_x_value(int index)
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Function 1
 double f_1(double a, double b, double x)
 {
-	double ans_f_1 = a * (x * x) + b;
+	double ans_f_1 = a * (x) + b;
 	return ans_f_1;
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Function 2
 double f_2(double c, double d, double x)
 {
@@ -156,7 +171,7 @@ double f_2(double c, double d, double x)
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Function approximation
 double f_approx(double ans_f_1, double ans_f_2)
 {
@@ -165,7 +180,7 @@ double f_approx(double ans_f_1, double ans_f_2)
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Target function calculation
 double f_target(double x)
 {
@@ -174,7 +189,7 @@ double f_target(double x)
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Calculates the difference between the approximate function and target function
 double soln::test(double ans_f_approx, double ans_f_target)
 {
@@ -183,8 +198,8 @@ return diff;
 }
 
 
-//-------------------------------------------------------------------------------------------------------
-//Calculates the fitness function
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Calculates the fitness based on the total fitness for each x value for each solution
 double soln::calc_fit(double diff)
 {
 	fitness = fitness - diff;
@@ -192,69 +207,54 @@ return fitness;
 }
 
 
-//-------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Calculates each function and the fitness
 double soln::get_fitness()
 {
 	ans_f_approx = f_approx(f_1(a, b, x_val), f_2(c, d, x_val));
 	ans_f_target = f_target(x_val);
-	//cout << "Begin function calculations" << endl;
-	//cout << "The calculated value for function 1 is " << endl;
 	f_1(a, b, x_val);							//writes function 1 value
-	//cout << "The calculated value for function 2 is " << endl;
 	f_2(c, d, x_val);							//writes function 2 value
-	//cout << "The calculated approximation is " << endl;
 	ans_f_approx;								//writes approximate function value
-	//cout << "The calculated target fucntion is " << endl;
 	ans_f_target;								//writes target function value
 	test(ans_f_approx, ans_f_target);							//writes difference betweeen the approximate function and target function values
-	//cout << "The fitness is " << endl;
 	calc_fit(diff);								//writes the fitness
 	return 1;
 }
 
 
-//-------------------------------------------------------------------------------------------------------
-//Resets the fitness values for both instacne of the soln class
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Resets the fitness values for each instacne of the soln class
 void soln::reset_fitness()
 {
 	fitness = 0;
 }
 
 
-//-------------------------------------------------------------------------------------------------------
-//
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Performs calculations to determine the outcome of each generation
 void generation(vector <soln>* pPop)
 {
 	for (int mem = 0; mem < pPop->size(); mem++)
 	{
 		pPop->at(mem).age++;
-		//pPop->at(mem).check_coeff();								//checks coefficients
-		pPop->at(mem).assign_coeff();								//assigns the coefficients to the fucntions
-		pPop->at(mem).reset_fitness();							//resets the fitness
+		pPop->at(mem).assign_coeff();										//assigns the coefficients to the fucntions
+		pPop->at(mem).reset_fitness();										//resets the fitness
 		for (int samples = 0; samples < max_samples; samples++)
 		{
 			pPop->at(samples).interp_x_value(samples);						//interprets the x value
-			pPop->at(samples).get_fitness();							//get the fitness for each soln at each x value
+			pPop->at(samples).get_fitness();								//get the fitness for each soln at each x value
 		}
 	}
-	////evaluate
-	//for (int i = 0; i < pPop->size(); i++)
-	//{
-	//	pPop->at(i).evaluate();
-	//}
-	//cout << " check gen 1" << endl;
-	//downselect
+	// Downselect
 	int to_kill = pPop->size() / 2;
-	//cout << to_kill << endl;
 	for (int i = 0; i < to_kill; i++)
 	{
 		int kill;
 		kill = binary_select(pPop);
 		pPop->erase(pPop->begin() + kill);
 	}
-	//cout << " check gen 2" << endl;
-	//replicate
+	//replicates the surviving solutions and then mutates them
 	int to_replicate = to_kill;
 	for (int i = 0; i < to_replicate; i++)
 	{
@@ -266,7 +266,9 @@ void generation(vector <soln>* pPop)
 	}
 }
 
-//
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Radomly comapares two solutions and kills one until half the solutions have been killed off
 int binary_select(vector<soln>* pPop)
 {
 	int loser;
@@ -274,87 +276,159 @@ int binary_select(vector<soln>* pPop)
 	int index_2 = rand() % pPop->size();
 	double fit_1 = pPop->at(index_1).fitness;
 	double fit_2 = pPop->at(index_2).fitness;
-	//cout << "replicate in" << endl;
 	if (fit_1 > fit_2) 
 	{
 		//then fit 1 survives
 		 loser = index_2;
-		//cout << "case 1" << endl;
 	}
 	else
 	{
 		loser = index_1;
-		//cout << "case 2" << endl;
 	}
 	return loser;
 }
 
 
-//-------------------------------------------------------------------------------------------------------
-//Decides which instance of the soln class survives and then replicates the surviver
-//double replicate(soln& S, soln& S2)
-//{
-//	cout << "replicate in" << endl;
-//	if (S.fitness < S2.fitness)
-//	{
-//		S = S2;
-//		cout << "case 1" << endl;
-//	}
-//	else
-//	{
-//		S2 = S;
-//		cout << "case 2" << endl;
-//	}
-//	cout << S.fitness << endl;
-//	cout << S2.fitness << endl;
-//	cout << "replicate out" << endl;
-//	return 1;
-//}
-
-
-//-------------------------------------------------------------------------------------------------------
-//Mutates the coefficients of the replication of the surviver
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Mutates the coefficients of the replication of the survivers
 double soln::mutation()
 {
 	age = 0;
-	//cout << "mutation in" << endl;
-	//cout << coeff.size() << endl;
 	for (int i = 0; i < number_coeff; i++)
 	{
+		if (rand() % 2)
+		{
+			continue;
+		}
 		double range = 0.1;
 		coeff.at(i) = coeff.at(i) + ((((double)rand() / RAND_MAX) * range) - (((double)rand() / RAND_MAX) * range));		//creates random coeff between 0 and range
 	}
-	/*for (int i = 0; i < coeff.size(); i++)
-	{
-		cout << coeff.at(i) << "\t";
-	}*/
-	//cout << "\n" << endl;
-	//cout << "mutation out" << endl;
 	return 1;
 }
 
 
-
-void display_final_Pop(bool display, vector<soln>* pPop)
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//
+struct less_than_fitness
 {
-	FILE * pFile;
-	errno_t err;
-	err = fopen_s(&pFile, "test.txt", "w");
-	if (display)
+	inline bool operator() (const soln& A1, const soln& A2)
 	{
-		for (int i = 0; i < pPop->size()/2; i++)
-		{
-			cout << pPop->at(i).age << "\t";
-			cout << pPop->at(i).fitness << endl;
-			pPop->at(i).check_coeff();
-			pPop->at(i).plot_to_file(pFile);
-		}
+		return (A1.fitness > A2.fitness);
 	}
-	fclose(pFile);
+};
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//reorders vector of solutions
+void scoreboard::reorder_solutions(vector<soln>* pPop)
+{
+	sort(pPop->begin(), pPop->end(), less_than_fitness());
 }
 
 
-void soln::plot_to_file(FILE* pFile)
+
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//writes the fitness for each generation of the best, median, and worst solutions to a text file
+void display_soln_fitness(bool display, vector<soln>* pPop)
+{
+	FILE*pFile1;
+	errno_t err;
+	err = fopen_s(&pFile1, "solns_fitness.txt", "w");
+	if (display)
+	{
+		double best_fitness = pPop->at(0).fitness;
+		double median_fitness = pPop->at(pPop->size() / 2).fitness;
+		double worst_fitness = pPop->at(pPop->size()-1).fitness;
+		int best_age = pPop->at(0).age;
+		int median_age = pPop->at(pPop->size() / 2).age;
+		int worst_age = pPop->at(pPop->size() - 1).age;
+		cout << best_age << endl;
+		cout << median_age << endl;
+		cout << worst_age << endl;
+		fprintf(pFile1, "best solution age and fitness \n");
+		fprintf(pFile1, "%d\t", best_age);
+		fprintf(pFile1, "%.4f\n", best_fitness);
+		fprintf(pFile1, "median solution age and fitness \n");
+		fprintf(pFile1, "%d\t", median_age);
+		fprintf(pFile1, "%.4f\n", median_fitness);
+		fprintf(pFile1, "wort solution age and fitness \n");
+		fprintf(pFile1, "%d\t", median_age);
+		fprintf(pFile1, "%.4f", worst_fitness);
+	}
+	fclose(pFile1);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//writes the coefficients for the best median and worst solutions to a text file
+void display_soln_coefficients(bool display, vector<soln>* pPop)
+{
+	FILE * pFile2;
+	errno_t err;
+	err = fopen_s(&pFile2, "soln_coefficients.txt", "w");
+	if (display)
+	{
+		vector<double> best_coeff = pPop->at(0).get_final_coefficients();
+		vector<double> median_coeff = pPop->at(pPop->size() / 2).get_final_coefficients();
+		vector<double> worst_coeff = pPop->at(pPop->size()-1).get_final_coefficients();
+		fprintf(pFile2, "best coefficients \n");
+		for (int i = 0; i < best_coeff.size(); i++)
+		{
+			double best_final_coeff = best_coeff.at(i);
+			fprintf(pFile2, "%.4f\t", best_final_coeff);
+		}
+		fprintf(pFile2, "\n");
+		fprintf(pFile2, "median coefficients \n");
+		for (int i = 0; i < median_coeff.size(); i++)
+		{
+			double median_final_coeff = median_coeff.at(i);
+			fprintf(pFile2, "%.4f\t", median_final_coeff);
+		}
+		fprintf(pFile2, "\n");
+		fprintf(pFile2, "worst coefficients \n");
+		for (int i = 0; i < worst_coeff.size(); i++)
+		{
+			double worst_final_coeff = worst_coeff.at(i);
+			fprintf(pFile2, "%.4f\t", worst_final_coeff);
+		}
+	}
+	fclose(pFile2);
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//gets the coefficients for each solution
+vector<double> soln::get_final_coefficients()
+{
+	return coeff;
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//writes the y values for the best median and worst solutions to a text file
+void display_soln_y_values(bool display, vector<soln>* pPop)
+{
+	FILE * pFile3;
+	errno_t err;
+	err = fopen_s(&pFile3, "y-values.txt", "w");
+	if (display)
+	{
+		fprintf(pFile3, "best solution y values \n");
+		pPop->at(0).plot_to_file3(pFile3);
+		fprintf(pFile3, "\n");
+		fprintf(pFile3, "median solution y values \n");
+		pPop->at(pPop->size() / 2).plot_to_file3(pFile3);
+		fprintf(pFile3, "\n");
+		fprintf(pFile3, "worst solution y values \n");
+		pPop->at(pPop->size()-1).plot_to_file3(pFile3);
+	}
+	fclose(pFile3);
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//calculates y values for the best median and worst solutions to a text file
+void soln::plot_to_file3(FILE* pFile3)
 {
 	double xx = 0;
 	while (xx < 2 * PI)
@@ -362,39 +436,48 @@ void soln::plot_to_file(FILE* pFile)
 		double yy = 0;
 		yy += f_1(a, b, xx);
 		yy += f_2(c, d, xx);
-		fprintf(pFile, "%.2f\t", yy);
+		fprintf(pFile3, "%.2f\t", yy);
 		xx += .1;
 	}
-	fprintf(pFile, "\n");
-	//double f_1(double a, double b, double x)
-	//{
-	//	double ans_f_1 = a * (x * x) + b;
-	//	return ans_f_1;
-	//}
-	////-------------------------------------------------------------------------------------------------------
-	////Function 2
-	//double f_2(double c, double d, double x)
-	//{
-	//	double ans_f_2 = c * sin(d * x);
-	//	return ans_f_2;
+	fprintf(pFile3, "\n");
 }
 
-//-------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//writes the static x values to a text file
+void display_x_values(bool display, vector<soln>* pPop)
+{
+	FILE*pFile4;
+	errno_t err;
+	err = fopen_s(&pFile4, "x-values.txt", "w");
+	if (display)
+	{
+		fprintf(pFile4, "x values \n");
+		for (int e = 0; e < max_samples; e++)
+		{
+			double xx = pPop->at(e).create_x_value(e);
+			fprintf(pFile4, "%.2f\t", xx);
+		}
+	}
+	fclose(pFile4);
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------
 int main()
 {
 	srand(time(NULL));
 	number_coeff = num_coeff();										//Assings a varibale to the output of the num_coeff function
 	cout << "The number of coefficients is ";
 	cout << number_coeff << endl;									//displays number of coeff based on number of prim functions
-	vector<soln> Pop(100);
-	vector<soln>* pPop = &Pop;
-	//cout << " check 1" << endl;
+	vector<soln> Pop(100);											//population size
+	vector<soln>* pPop = &Pop;										//creates a vector of solutions
+	scoreboard SB;
 	for (int i = 0; i < pPop->size(); i++)
 	{
 		pPop->at(i).coefficients();									//creates coefficients
 	}
-	//cout << "check 2" << endl;
-	for (int gen = 0; gen < max_generations; gen++)
+	for (int gen = 0; gen < max_generations; gen++)					//calculates the outcome of the generation until the max generations has been reached
 	{		
 		generation(pPop);
 		if (gen % 10 == 0)
@@ -402,57 +485,15 @@ int main()
 			cout << gen << endl;
 		}
 	}
-	//cout << " check 3" << endl;
-	display_final_Pop(true, pPop);
+	SB.reorder_solutions(pPop);
+	display_soln_fitness(true, pPop);
+	display_soln_coefficients(true, pPop);
+	display_soln_y_values(true, pPop);
+	display_x_values(true, pPop);
 	return 0;
 }
 
 
 
-//soln S;															//Creates the first instance of soln class
-	//soln S2;														//Creates the second instance of soln class
-	//srand(time(NULL));
-	//number_coeff = num_coeff();										//Assings a varibale to the output of the num_coeff function
-	//cout << "The number of coefficients is ";
-	//cout << number_coeff << endl;									//displays number of coeff based on number of prim functions
-	//S.coefficients();												//Creates random coefficients the first instance of soln class
-	//S2.coefficients();												//Creates random coefficients the second instance of soln class
-	//FILE * pfile;
-	//errno_t err;
-	//err = fopen_s(&pfile, "test.txt", "w");
-	//for (int i = 0; i < n; i++)
-	//{
-	//	//cout << "First instance coefficients" << endl;
-	//	S.check_coeff();											//Displays coefficients the first instance of soln class
-	//	//cout << "Second instance coefficients" << endl;
-	//	S2.check_coeff();											//Displys coefficients the second instance of soln class
-	//	S.assign_coeff();											//Assigns coefficients to their respective index in the first instance of soln class
-	//	S2.assign_coeff();											//Assigns coefficients to their respective index in the second instance of soln class
-	//	S.reset_fitness();
-	//	S2.reset_fitness();
-	//	for (int i = 0; i < samples; i++)
-	//	{
-	//		S.create_x_value(i);
-	//		//cout << "First instance of soln class" << endl;
-	//		//cout << "The x value is " << endl;
-	//		S.interp_x_value(i);									//Gets the x value and assigns it to the first instance of soln class
-	//		S.get_fitness();										//Calculates and displays fitness for the first instance of soln class
-	//		//cout << "\n" << endl;
-	//		//cout << "Second instance of soln class" << endl;
-	//		//cout << "The x value is " << endl;
-	//		S2.interp_x_value(i);									//Gets the x value and assigns it to the second instance of soln class
-	//		S2.get_fitness();										//Calculates and displays fitness for the second instance of soln class
-	//		//cout << "\n" << endl;
-	//	}
-	//	fprintf(pfile, "%.5f\t%.5f\n", S.fitness, S2.fitness);
-	//	//replicate(S, S2);											//Determines which solution stays and replicates
-	//	cout << "\n" << endl;
-	//	S2.mutation();												//Mutates the losing instance of the soln class
-	//	cout << "\n" << endl;
-	//	cout << "next set" << endl;
-	//	
-	//}
-	//cout << "Solution coefficients" << endl;
-	//S.check_coeff();												//Displays the solution coefficients
-	//fclose(pfile);
-//two fucntions for putting the target fuction to a text file
+//need to plot more data (plot the best median and worst reults)
+// write a text file that shows the fitness for each generation
